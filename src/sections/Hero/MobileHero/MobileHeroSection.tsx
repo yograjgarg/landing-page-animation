@@ -1,11 +1,14 @@
 "use client";
 
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 
 import { SplitText } from "gsap/SplitText";
+import { Description } from "@/components/Description/Description";
+import { CircleImage } from "@/components/CircleImage/CircleImage";
+import { ScrollToExplore } from "@/components/Button/ScrollToExplore";
 
 gsap.registerPlugin(useGSAP, SplitText);
 
@@ -20,10 +23,12 @@ export const MobileHeroSection: FC = () => {
       splitUspText.lines,
       {
         opacity: 0,
+        visibility: "hidden",
         y: "100%",
       },
       {
         opacity: 1,
+        visibility: "visible",
         y: "0%",
         stagger: 0.15,
       }
@@ -52,27 +57,7 @@ export const MobileHeroSection: FC = () => {
       );
   }, []);
 
-  useGSAP(() => {
-    const splitDescription = new SplitText(".description-mobile", {
-      type: "lines",
-    });
-
-    gsap.fromTo(
-      splitDescription.lines,
-      {
-        opacity: 0,
-        y: "100%",
-        display: "none",
-      },
-      {
-        opacity: 1,
-        y: "0%",
-        stagger: 0.1,
-        display: "block",
-      }
-    );
-  }, [isImageExpanded]);
-
+  const descriptionTimeline = gsap.timeline();
   const expandImage = (id: number) => {
     if (!isImageExpanded) {
       gsap.to(`.img-${id}`, {
@@ -115,20 +100,35 @@ export const MobileHeroSection: FC = () => {
         }
       );
 
-      gsap.fromTo(
-        `.description-mobile-${id}`,
-        {
-          opacity: 0,
-          scale: 0,
-          display: "none",
-        },
-        {
-          opacity: 1,
-          scale: 1,
-          display: "block",
-          delay: 0.3,
-        }
-      );
+      descriptionTimeline
+        .call(() => {
+          const split = new SplitText(`.description-mobile-${id}`, {
+            type: "lines",
+          });
+          gsap.fromTo(
+            split.lines,
+            { yPercent: 100, opacity: 0 },
+            {
+              yPercent: 0,
+              opacity: 1,
+              stagger: 0.15,
+              duration: 0.6,
+              ease: "power3.out",
+            }
+          ),
+            0;
+        })
+        .fromTo(
+          `.description-mobile-${id}`,
+          {
+            opacity: 0,
+          },
+          {
+            opacity: 1,
+            ease: "power1.inOut",
+          },
+          0
+        );
 
       gsap.fromTo(
         `.scroll-down-mobile-${id}`,
@@ -151,12 +151,16 @@ export const MobileHeroSection: FC = () => {
         height: "25%",
         top: topPosition[id - 1],
         duration: 0.8,
-        opacity: 0,
         zIndex: 0,
         ease: "power1.inOut",
         onComplete: () => {
           setIsImageExpanded(false);
         },
+      });
+
+      gsap.to(`.img-${id}`, {
+        opacity: 0,
+        delay: 0.8,
       });
 
       gsap.to(`.usp-mobile-${id}`, {
@@ -192,17 +196,21 @@ export const MobileHeroSection: FC = () => {
       gsap.fromTo(
         `.description-mobile-${id}`,
         {
+          x: "0%",
           opacity: 1,
-          scale: 1,
-          display: "block",
-          delay: 0.3,
         },
         {
+          x: "-100%",
           opacity: 0,
-          scale: 0,
-          display: "none",
+          onComplete: () => {
+            gsap.set(`.description-mobile-${id}`, {
+              x: "0%",
+              opacity: 0,
+            });
+          },
         }
       );
+
       gsap.fromTo(
         `.scroll-down-mobile-${id}`,
         {
@@ -228,7 +236,7 @@ export const MobileHeroSection: FC = () => {
       >
         <div className="h-full">
           <img
-            src="/image-1.jpg"
+            src="/images/chair1.jpg"
             alt="image"
             className="absolute top-0 h-[25%] w-full opacity-0 img-1"
           />
@@ -250,18 +258,21 @@ export const MobileHeroSection: FC = () => {
         </div>
 
         <div className="z-30 absolute flex items-center justify-center h-full top-10 flex-col w-full pointer-events-none">
-          <div className="items-center justify-center bg-white p-4 overflow-hidden rounded-full size-[100px] z-20 btn-img-mobile-1 opacity-0 pointer-events-none">
-            <img src="/image-1.jpg" alt="" className="size-[px] rounded-full" />
-          </div>
-          <p className="text-sm text-white w-[280px] z-20 pb-10 description-mobile description-mobile-1 mt-5 opacity-0 pointer-events-none">
-            Embracing the philosophy that technology can enhance comfort and
-            functionality, we continuosly seek novel ways to elevate their
-            seating creations
-          </p>
+          <CircleImage
+            image={"/images/thumbnailchair1.jpg"}
+            parentClass="btn-img-mobile-1"
+          />
+          <Description
+            text={
+              "Guided by a passionate pursuit of redefining the way people experience comfort, our visionary approach is deeply rooted in three core principles: Artistry, Functionality, and Human-Centric Design."
+            }
+            parentClass="description-mobile-1 description-mobile"
+          />
 
-          <p className="text-sm text-white w-[280px] z-20 scroll-down-mobile-1 text-center opacity-0 pointer-events-none">
-            Scroll down to explore
-          </p>
+          <ScrollToExplore
+            text={"Scroll down to explore"}
+            parentClass="scroll-down-mobile-1"
+          />
         </div>
       </div>
 
@@ -273,7 +284,7 @@ export const MobileHeroSection: FC = () => {
       >
         <div>
           <img
-            src="/image-1.jpg"
+            src="/images/chair2.jpg"
             alt="image"
             className="absolute top-[25%] h-1/4 w-full opacity-0 img-2"
           />
@@ -284,18 +295,22 @@ export const MobileHeroSection: FC = () => {
         </div>
 
         <div className="z-30 absolute flex items-center justify-center top-10 h-full flex-col w-full pointer-events-none">
-          <div className="items-center justify-center bg-white p-4 overflow-hidden rounded-full size-[100px] z-20 btn-img-mobile-2 opacity-0 pointer-events-none">
-            <img src="/image-1.jpg" alt="" className="size-[px] rounded-full" />
-          </div>
-          <p className="text-sm text-white w-[280px] z-20 pb-10 description-mobile description-mobile-2 mt-5 opacity-0 pointer-events-none">
-            Embracing the philosophy that technology can enhance comfort and
-            functionality, we continuosly seek novel ways to elevate their
-            seating creations
-          </p>
+          <CircleImage
+            image={"/images/thumbnailchair2.jpg"}
+            parentClass="btn-img-mobile-2"
+          />
 
-          <p className="text-sm text-white w-[280px] z-20 scroll-down-mobile-2 text-center opacity-0 pointer-events-none">
-            Scroll down to explore
-          </p>
+          <Description
+            text={
+              "Embracing the philosophy that technology can enhance comfort and functionality, we continuosly seek novel ways to elevate their seating creations"
+            }
+            parentClass="description-mobile-2 description-mobile"
+          />
+
+          <ScrollToExplore
+            text={"Scroll down to explore"}
+            parentClass="scroll-down-mobile-2"
+          />
         </div>
       </div>
 
@@ -307,7 +322,7 @@ export const MobileHeroSection: FC = () => {
       >
         <div>
           <img
-            src="/image-2.jpg"
+            src="/images/chair3.jpg"
             alt="image"
             className="absolute top-[50%] h-1/4 w-full img-3 opacity-0"
           />
@@ -318,22 +333,22 @@ export const MobileHeroSection: FC = () => {
         </div>
 
         <div className="z-30 absolute flex items-center justify-center flex-col w-full pointer-events-none h-full top-10">
-          <div className="items-center justify-center bg-white p-4 overflow-hidden rounded-full size-[100px] z-20 btn-img-mobile-3 opacity-0 pointer-events-none">
-            <img
-              src="/image-1.jpg"
-              alt=""
-              className="size-[px] rounded-full pointer-events-none"
-            />
-          </div>
-          <p className="text-sm text-white w-[280px] z-20 pb-10 description-mobile description-mobile-3 mt-5 opacity-0 pointer-events-none">
-            Embracing the philosophy that technology can enhance comfort and
-            functionality, we continuosly seek novel ways to elevate their
-            seating creations
-          </p>
+          <CircleImage
+            image={"/images/thumbnailchair3.jpg"}
+            parentClass="btn-img-mobile-3"
+          />
 
-          <p className="text-sm text-white w-[280px] z-20 scroll-down-mobile-3 text-center opacity-0 pointer-events-none">
-            Scroll down to explore
-          </p>
+          <Description
+            text={
+              "It all began when a group of visionary designers, engineers, and artist came together with a shared vision: to create chairs that transcended mere functionality and become captivating works of art."
+            }
+            parentClass="description-mobile-3 description-mobile"
+          />
+
+          <ScrollToExplore
+            text={"Scroll down to explore"}
+            parentClass="scroll-down-mobile-3"
+          />
         </div>
       </div>
 
@@ -345,7 +360,7 @@ export const MobileHeroSection: FC = () => {
         <div className="flex items-end justify-between">
           <>
             <img
-              src="/image-2.jpg"
+              src="/images/chair4.jpg"
               alt="image"
               className="absolute top-[75%] h-1/4 w-full opacity-0 img-4 "
             />
@@ -374,22 +389,22 @@ export const MobileHeroSection: FC = () => {
         </div>
 
         <div className="z-30 absolute flex items-center justify-center flex-col w-full pointer-events-none h-full top-10">
-          <div className="items-center justify-center bg-white p-4 overflow-hidden rounded-full size-[100px] z-20 btn-img-mobile-4 opacity-0 pointer-events-none">
-            <img
-              src="/image-1.jpg"
-              alt=""
-              className="size-[px] rounded-full pointer-events-none"
-            />
-          </div>
-          <p className="text-sm text-white w-[280px] z-20 pb-10 description-mobile description-mobile-4 mt-5 opacity-0 pointer-events-none">
-            Embracing the philosophy that technology can enhance comfort and
-            functionality, we continuosly seek novel ways to elevate their
-            seating creations
-          </p>
+          <CircleImage
+            image={"/images/thumbnailchair4.jpg"}
+            parentClass="btn-img-mobile-4 "
+          />
 
-          <p className="text-sm text-white w-[280px] z-20 scroll-down-mobile-4 text-center opacity-0 pointer-events-none">
-            Scroll down to explore
-          </p>
+          <Description
+            text={
+              "United by love for creativity and innovation, our team is the driving force behind the brand's success and the creation of extraordinary seating solution."
+            }
+            parentClass="description-mobile-4 description-mobile"
+          />
+
+          <ScrollToExplore
+            text={"Scroll down to explore"}
+            parentClass="scroll-down-mobile-4"
+          />
         </div>
       </div>
     </div>

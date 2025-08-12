@@ -6,16 +6,19 @@ import { useGSAP } from "@gsap/react";
 
 import { SplitText } from "gsap/SplitText";
 import { MotionPathPlugin } from "gsap/MotionPathPlugin";
-import { useEffect, useRef, useState } from "react";
-import { MobileHeroSection } from "@/sections/MobileHeroSection";
+import { FC, useEffect, useRef, useState } from "react";
+import { MobileHeroSection } from "@/sections/Hero/MobileHero/MobileHeroSection";
+import { cn } from "@/utils/cn";
+import { Description } from "@/components/Description/Description";
+import { CircleImage } from "@/components/CircleImage/CircleImage";
+import { ScrollToExplore } from "@/components/Button/ScrollToExplore";
 
 gsap.registerPlugin(useGSAP, SplitText, MotionPathPlugin);
 
 const Home = () => {
-  const [isImageAnimationStarted, setIsImageAnimationStarted] =
-    useState<boolean>(false);
-
   const [isGridExpanded, setIsGridExpanded] = useState<boolean>(false);
+
+  const [isImageVisible, setIsImageVisible] = useState<boolean>(false);
 
   const container = useRef(null);
 
@@ -110,10 +113,9 @@ const Home = () => {
   });
 
   const handleEnter = (id: number) => {
-    console.log(id)
-    gsap.killTweensOf(`.img-${id}`);
-
     if (!isGridExpanded) {
+      gsap.killTweensOf(`.img-${id}`);
+
       gsap.to(`.img-${id}`, {
         y: window.innerWidth > 1280 ? "0%" : undefined,
         duration: 0.8,
@@ -124,15 +126,15 @@ const Home = () => {
   };
 
   const handleLeave = (id: number) => {
-    gsap.killTweensOf(`.img-${id}`); // stop enter animation if still running
-
     if (!isGridExpanded) {
+      gsap.killTweensOf(`.img-${id}`);
+
       gsap.to(`.img-${id}`, {
         y: window.innerWidth > 1280 ? "-100%" : undefined,
         // y: "-100%",
         duration: 0.8,
         ease: "power1.inOut",
-        opacity: 0,
+        // opacity: 0,
         onComplete: () => {
           // Instantly reset to bottom for next hover
           gsap.set(`.img-${id}`, {
@@ -145,11 +147,17 @@ const Home = () => {
   };
 
   const tl = gsap.timeline({ ease: "power3.inOut" });
+  const descriptionTimeline = gsap.timeline();
+
   const expandItem = (id: number) => {
     tl.to(`.img-${id}`, {
       width: "100%",
       left: 0,
-      opacity: 1,
+      // opacity: 1,
+      zIndex: 20,
+      onComplete: () => {
+        setIsGridExpanded(true);
+      },
     })
       .to(
         `.usp:not(.usp-${id})`,
@@ -193,21 +201,33 @@ const Home = () => {
       }
     );
 
-    gsap.fromTo(
-      `.description-${id}`,
-      {
-        opacity: 0,
-        y: "40%",
-        display: "none",
-      },
-      {
-        opacity: 1,
-        y: "0%",
-        display: "inline",
-        stagger: 0.5,
-        ease: "power1.inOut",
-      }
-    );
+    descriptionTimeline
+      .call(() => {
+        const split = new SplitText(`.description-${id}`, { type: "lines" });
+        gsap.fromTo(
+          split.lines,
+          { yPercent: 100, opacity: 0 },
+          {
+            yPercent: 0,
+            opacity: 1,
+            stagger: 0.15,
+            duration: 0.6,
+            ease: "power3.out",
+          }
+        ),
+          0;
+      })
+      .fromTo(
+        `.description-${id}`,
+        {
+          opacity: 0,
+        },
+        {
+          opacity: 1,
+          ease: "power1.inOut",
+        },
+        0
+      );
 
     gsap.fromTo(
       `.scroll-down-${id}`,
@@ -223,8 +243,6 @@ const Home = () => {
         display: "block",
       }
     );
-
-    setIsGridExpanded(true);
   };
 
   const collapaseItem = (id: number) => {
@@ -233,6 +251,10 @@ const Home = () => {
     tl.to(`.img-${id}`, {
       width: "25%",
       left: leftPosition[id - 1],
+      zIndex: 0,
+      onComplete: () => {
+        setIsGridExpanded(false);
+      },
     })
       // .to(`.img-${id}`, { opacity: 0 })
       .to(
@@ -287,7 +309,6 @@ const Home = () => {
           gsap.set(`.description-${id}`, {
             x: "0%",
             opacity: 0,
-            display: "none",
           });
         },
       }
@@ -306,8 +327,6 @@ const Home = () => {
         },
       }
     );
-
-    setIsGridExpanded(false);
   };
 
   return (
@@ -332,36 +351,33 @@ const Home = () => {
             <p className="text-black text-sm brand-name z-40 p-5">Visionary</p>
             <div>
               <img
-                src="/image-1.jpg"
+                src="/images/chair1.jpg"
                 alt="image"
                 className="absolute inset-0 h-full img-1 w-[25%] z-10  xl:translate-y-full opacity-0"
               />
 
-              <p className="uppercase text-black lg:text-2xl xl:text-4xl usp usp-1 absolute bottom-0 z-20 p-5">
+              <p className="uppercase text-black lg:text-2xl xl:text-4xl usp usp-1 absolute bottom-0 z-30 p-5">
                 our <br /> approach
               </p>
             </div>
 
-            {/* Description */}
             <div className="">
-              <p className="text-sm text-white w-[280px] absolute bottom-0 xl:bottom-4 md:right-52 lg:right-60 xl:right-[350px] z-20 pb-10 description-1 hidden">
-                Guided by a passionate pursuit of redefining the way people
-                experience comfort, our visionary approach is deeply rooted in
-                three core principles: Artistry, Functionality, and
-                Human-Centric Design.
-              </p>
+              <Description
+                text={
+                  "Guided by a passionate pursuit of redefining the way people experience comfort, our visionary approach is deeply rooted in three core principles: Artistry, Functionality, and Human-Centric Design."
+                }
+                parentClass="description-1 description"
+              />
 
-              <p className="text-sm text-white w-[280px] absolute bottom-10 -right-24 lg:-right-20 xl:-right-10 z-20 scroll-down-1 opacity-0 hidden">
-                Scroll down to explore
-              </p>
+              <ScrollToExplore
+                text={"Scroll down to explore"}
+                parentClass="scroll-down-1"
+              />
 
-              <div className="items-center justify-center bg-white overflow-hidden rounded-full md:size-[150px] lg:size-[220px] xl:size-[200px] z-20 absolute right-32 xl:right-52 bottom-40 xl:top-1/2 xl:-translate-y-1/2 img-btn-1 opacity-0 hidden">
-                <img
-                  src="/image-2.jpg"
-                  alt=""
-                  className="size-[px] rounded-full"
-                />
-              </div>
+              <CircleImage
+                image={"/images/thumbnailchair1.jpg"}
+                parentClass="img-btn-1"
+              />
             </div>
           </div>
           <div
@@ -382,34 +398,33 @@ const Home = () => {
 
             <div>
               <img
-                src="/image-1.jpg"
+                src="/images/chair2.jpg"
                 alt="image"
                 className="absolute inset-0 left-[25%] h-full img-2 w-[25%] xl:translate-y-full opacity-0"
               />
 
-              <p className="uppercase text-black  lg:text-2xl xl:text-4xl usp usp-2 absolute bottom-0 p-5">
+              <p className="uppercase text-black  lg:text-2xl xl:text-4xl usp usp-2 absolute bottom-0 p-5 z-30">
                 our <br /> Technology
               </p>
             </div>
 
             <div className="">
-              <p className="text-sm text-white w-[280px] absolute bottom-20 right-[450px] z-20 pb-10 description-2 hidden">
-                Embracing the philosophy that technology can enhance comfort and
-                functionality, we continuosly seek novel ways to elevate their
-                seating creations
-              </p>
+              <Description
+                text={
+                  "Embracing the philosophy that technology can enhance comfort and functionality, we continuosly seek novel ways to elevate their seating creations"
+                }
+                parentClass="description-2 description"
+              />
 
-              <p className="text-sm text-white w-[280px] absolute bottom-10 right-0 z-20 scroll-down-2 opacity-0 hidden">
-                Scroll down to explore
-              </p>
+              <ScrollToExplore
+                text={"Scroll down to explore"}
+                parentClass="scroll-down-2"
+              />
 
-              <div className="items-center justify-center bg-white p-4 overflow-hidden rounded-full size-[180px] z-20 absolute right-32 top-1/2 -translate-y-1/2 img-btn-2 opacity-0 hidden">
-                <img
-                  src="/image-1.jpg"
-                  alt=""
-                  className="size-[px] rounded-full"
-                />
-              </div>
+              <CircleImage
+                image={"/images/thumbnailchair2.jpg"}
+                parentClass="img-btn-2"
+              />
             </div>
           </div>
 
@@ -427,35 +442,32 @@ const Home = () => {
           >
             <div>
               <img
-                src="/image-1.jpg"
+                src="/images/chair3.jpg"
                 alt="image"
                 className="absolute inset-0 left-[50%] h-full img-3 w-[25%] xl:translate-y-full opacity-0"
               />
 
-              <p className="uppercase text-black  lg:text-2xl xl:text-4xl usp usp-3 absolute bottom-0 p-5">
+              <p className="uppercase text-black  lg:text-2xl xl:text-4xl usp usp-3 absolute bottom-0 p-5 z-30">
                 our <br /> story
               </p>
             </div>
 
             <div className="">
-              <p className="text-sm text-white w-[280px] absolute bottom-20 right-[450px] z-20 pb-10 description-3 hidden">
-                It all began when a group of visionary designers, engineers, and
-                artist came together with a shared vision: to create chairs that
-                transcended mere functionality and become captivating works of
-                art.
-              </p>
+              <Description
+                text={
+                  "It all began when a group of visionary designers, engineers, and artist came together with a shared vision: to create chairs that transcended mere functionality and become captivating works of art."
+                }
+                parentClass="description-3 description"
+              />
+              <ScrollToExplore
+                text={"Scroll down to explore"}
+                parentClass="scroll-down-3"
+              />
 
-              <p className="text-sm text-white w-[280px] absolute bottom-10 right-0 z-20 scroll-down-3 opacity-0 hidden">
-                Scroll down to explore
-              </p>
-
-              <div className="items-center justify-center bg-white p-4 overflow-hidden rounded-full size-[180px] z-20 absolute right-32 top-1/2 -translate-y-1/2 img-btn-3 opacity-0 hidden">
-                <img
-                  src="/image-1.jpg"
-                  alt=""
-                  className="size-[px] rounded-full"
-                />
-              </div>
+              <CircleImage
+                image={"/images/thumbnailchair3.jpg"}
+                parentClass="img-btn-3"
+              />
             </div>
           </div>
           <div
@@ -474,53 +486,36 @@ const Home = () => {
 
             <div>
               <img
-                src="/image-2.jpg"
+                src="/images/chair4.jpg"
                 alt="image"
                 className="absolute inset-0 left-[75%] h-full img-4 w-[25%] xl:translate-y-full opacity-0"
               />
 
-              <p className="uppercase text-black  lg:text-2xl xl:text-4xl usp usp-4 absolute bottom-0 p-5">
+              <p className="uppercase text-black  lg:text-2xl xl:text-4xl usp usp-4 absolute bottom-0 p-5 z-30">
                 our <br /> <span className="block"> design team</span>
               </p>
             </div>
             <div className="">
-              <p className="text-sm text-white w-[280px] absolute bottom-20 right-[450px] z-20 pb-10 description-4 hidden">
-                United by love for creativity and innovation, our team is the
-                driving force behind the brand's success and the creation of
-                extraordinary seating solution.
-              </p>
+              <Description
+                text={
+                  "United by love for creativity and innovation, our team is the driving force behind the brand's success and the creation of extraordinary seating solution."
+                }
+                parentClass="description-4 description"
+              />
 
-              <p className="text-sm text-white w-[280px] absolute bottom-10 right-0 z-20 scroll-down-4 opacity-0 hidden">
-                Scroll down to explore
-              </p>
-
-              <div className="items-center justify-center bg-white p-4 overflow-hidden rounded-full size-[180px] z-20 absolute right-32 top-1/2 -translate-y-1/2 img-btn-4 opacity-0 hidden">
-                <img
-                  src="/image-1.jpg"
-                  alt=""
-                  className="size-[px] rounded-full"
-                />
-              </div>
+              <ScrollToExplore
+                text={"Scroll down to explore"}
+                parentClass="scroll-down-4"
+              />
+              <CircleImage
+                image={"/images/thumbnailchair4.jpg"}
+                parentClass="img-btn-4"
+              />
             </div>
           </div>
         </div>
 
         <div className="absolute top-0 w-[40%] left-[50%] p-5 z-30">
-          {/* <svg
-      id="path"
-      viewBox="0 0 200 500"
-      width="200"
-      height="500"
-      style={{ border: "1px solid #ccc" }}
-    >
-      <path
-        d="
-        M 100 900 Q 120 450, 100 400  T 100 300 T 100 200 T 100 100 T 100 0       "
-        stroke="blue"
-        fill="transparent"
-        strokeWidth="3"
-      />
-    </svg> */}
           <p className="uppercase text-black md:text-2xl lg:text-3xl xl:text-5xl heading z-40">
             Elevating comfort with every curve
           </p>
